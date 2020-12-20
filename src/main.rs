@@ -171,7 +171,6 @@ fn insert_sheet(path: &String, origin: &str, url: &str) -> Result<i32, HistoryTo
         .worksheet_range("Sheet1")
         .ok_or(calamine::Error::Msg("Cannot find 'Sheet1'"))??;
 
-    //let mut rows = RangeDeserializerBuilder::new().from_range(&range)?;
     let mut rows = range.rows().into_iter();
     let mut client = Client::connect(&url, NoTls)?;
     let mut p_origin = origin.to_string();
@@ -217,7 +216,6 @@ fn insert_sheet(path: &String, origin: &str, url: &str) -> Result<i32, HistoryTo
             let mut host = get_string(&row[3])?;
             let mut url = get_string(&row[4])?;
             let mut ua = get_string(&row[5])?;
-            //let (ts, tags, mut title, mut host, mut url, mut ua): (String, String, String, String, String, String) = row?;
 
             if let Ok(timestamp) = chrono::DateTime::parse_from_rfc3339(&ts) {
                 // Don't insert duplicate records, assumes timestamps from an origin only increase
@@ -233,12 +231,13 @@ fn insert_sheet(path: &String, origin: &str, url: &str) -> Result<i32, HistoryTo
                 let tags = tags
                     .split(";")
                     .filter(|t| t.chars().count() < 100)
+                    .map(|t| t.trim())
                     .collect();
                 let ptags = postgres_array::Array::from_vec(tags, 0);
                 txn.execute(&sql, &[&pts, &title, &host, &url, &ua, &p_origin, &ptags])?;
+                count += 1;
             }
 
-            count += 1;
             if count % 1000 == 0 {
                 txn.commit()?;
                 continue 'runner;
