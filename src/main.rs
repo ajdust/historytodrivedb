@@ -235,12 +235,12 @@ fn insert_sheet(path: &String, origin: &str, url: &str) -> Result<i32, HistoryTo
                     .collect();
                 let ptags = postgres_array::Array::from_vec(tags, 0);
                 txn.execute(&sql, &[&pts, &title, &host, &url, &ua, &p_origin, &ptags])?;
-                count += 1;
-            }
 
-            if count % 1000 == 0 {
-                txn.commit()?;
-                continue 'runner;
+                count += 1;
+                if count % 1000 == 0 {
+                    txn.commit()?;
+                    continue 'runner;
+                }
             }
         }
 
